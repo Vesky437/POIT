@@ -1,0 +1,2 @@
+# POIT
+Seminarny projekt
