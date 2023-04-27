@@ -1,0 +1,89 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Flask-SocketIO Test</title>
+   <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.min.js"></script>
+   <script src="static/libs/gauge.min.js"></script>
+   <script type="text/javascript" charset="utf-8">
+   //https://canvas-gauges.com/documentation/user-guide/configuration
+     $(document).ready(function() {    
+      var gauge = new RadialGauge({
+          renderTo: 'canvasID',
+          width: 300,
+          height: 300,
+          units: "Km/h",
+          minValue: 0,
+          maxValue: 1,
+          majorTicks: [
+              "0",
+              "0.1",
+              "0.2",
+              "0.3",
+              "0.4",
+              "0.5",
+              "0.6",
+              "0.7",
+              "0.8",
+              "0.9",
+              "1.0"
+          ],
+          minorTicks: 2,
+          strokeTicks: true,
+          highlights: [
+              {
+                  "from": 0.5,
+                  "to": 1,
+                  "color": "rgba(200, 50, 50, .75)"
+              }
+          ],
+          colorPlate: "#fff",
+          borderShadowWidth: 0,
+          borders: false,
+          needleType: "arrow",
+          needleWidth: 2,
+          needleCircleSize: 7,
+          needleCircleOuter: true,
+          needleCircleInner: false,
+          animationDuration: 1500,
+          animationRule: "linear"
+      });
+      gauge.draw();
+      gauge.value = "0";
+
+      
+      namespace = '/test';
+      var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+      socket.on('connect', function() {
+        socket.emit('my_event', {data: 'I\'m connected!', value: 1}); });
+
+      socket.on('my_response', function(msg) {
+        console.log(msg.data);
+        $('#log').append('Received #'+msg.count+': '+msg.data+'<br>').html(); 
+        gauge.value = msg.data;                
+        });
+
+      $('form#emit').submit(function(event) {
+          socket.emit('my_event', {value: $('#emit_value').val()});
+          return false; });
+      $('#buttonVal').click(function(event) {
+          //console.log($('#buttonVal').val());
+          socket.emit('click_event', {value: $('#buttonVal').val()});
+          return false; });
+      $('form#disconnect').submit(function(event) {
+          socket.emit('disconnect_request');
+          return false; });         
+      });
+    </script>
+ </head>
+ <body>
+  <h1>Flask-SocketIO Test</h1>
+  <form id="disconnect" method="POST" action="#">
+    <input type="submit" value="Disconnect">
+  </form> 
+  <canvas id="canvasID"></canvas>
+  <h2>Receive:</h2>
+  <div id="log"></div>
+ </body>
+</html>

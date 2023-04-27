@@ -1,0 +1,191 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Flask-SocketIO Test</title>
+   <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.min.js"></script>
+   <script src="static/libs/plotly-latest.min.js"></script>
+   <script src="static/libs/gauge.min.js"></script>
+   <link rel="stylesheet" href="static/jquery-ui.min.css">
+    <script src="static/jquery-3.2.1.min.js"></script>
+    <script src="static/jquery-ui.min.js"></script>
+   
+   <script type="text/javascript" charset="utf-8">
+     $(document).ready(function() {
+      var gauge = new RadialGauge({
+          renderTo: 'canvasID',
+          width: 300,
+          height: 300,
+          units: "Km/h",
+          minValue: 0,
+          maxValue: 1,
+          majorTicks: [
+              "0",
+              "0.1",
+              "0.2",
+              "0.3",
+              "0.4",
+              "0.5",
+              "0.6",
+              "0.7",
+              "0.8",
+              "0.9",
+              "1.0"
+          ],
+          minorTicks: 2,
+          strokeTicks: true,
+          highlights: [
+              {
+                  "from": 0.5,
+                  "to": 1,
+                  "color": "rgba(200, 50, 50, .75)"
+              }
+          ],
+          colorPlate: "#fff",
+          borderShadowWidth: 0,
+          borders: false,
+          needleType: "arrow",
+          needleWidth: 2,
+          needleCircleSize: 7,
+          needleCircleOuter: true,
+          needleCircleInner: false,
+          animationDuration: 1500,
+          animationRule: "linear"
+      });
+      gauge.draw();
+      gauge.value = "0";
+    
+      var x = new Array();
+      var y = new Array();
+      var u = new Array();
+      var trace;
+      var layout;
+      
+      namespace = '/test';
+      var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+      socket.on('connect', function() {
+        socket.emit('my_event', {data: 'I\'m connected!', value: 1}); });
+
+      socket.on('my_response', function(msg) {
+        console.log(msg.data);
+        $('#log').append('Received #'+msg.count+': '+msg.data+'<br>').html(); 
+        x.push(parseFloat(msg.count));
+        y.push(parseFloat(msg.dataS));
+        u.push(parseFloat(msg.dataC));
+        trace = {
+            x: x,
+            y: y,
+            
+        };
+        trace2 = {
+            x: x,
+            y: u,
+            
+        };        
+        layout = {
+          title: 'Data',
+          xaxis: {
+              title: 'x',
+          },
+          yaxis: {
+              title: 'y',
+              //range: [-1,1]
+          }
+        };
+        console.log(trace);
+        console.log(trace2);
+        var traces = new Array();
+        traces.push(trace);
+        var traces2 = new Array();
+        traces2.push(trace2);
+        Plotly.newPlot($('#plotdiv')[0], traces, layout); 
+        Plotly.addTraces(plotdiv, traces2)              
+        });
+        
+      socket.on('my_response2', function(msg) {
+        console.log(msg.data);
+        $('#log2').append('Received #'+msg.count+': '+msg.data+'<br>').html(); });
+      
+      socket.on('my_response3', function(msg) {
+        console.log(msg.data);
+        $('#log3').append('Received #'+msg.count+': '+msg.data+'<br>').html(); 
+        gauge.value = msg.data;                
+        });
+
+
+      $('form#emit').submit(function(event) {
+          socket.emit('my_event', {value: $('#emit_value').val()});
+          return false; });
+      $('#buttonVal').click(function(event) {
+          //console.log($('#buttonVal').val());
+          socket.emit('click_event', {value: $('#buttonVal').val()});
+          return false; });
+      $('form#disconnect').submit(function(event) {
+          socket.emit('disconnect_request');
+          return false; }); 
+      $( function() {
+        $( "#tabs" ).tabs({
+          event: "mouseover"
+        });
+      });
+              
+      });
+    </script>
+   
+ </head>
+ <body>
+   <div id="tabs">
+      <ul>
+        <li><a href="#tabs-1">Nunc tincidunt</a></li>
+        <li><a href="#tabs-2">Proin dolor</a></li>
+        <li><a href="#tabs-3">Aenean lacinia</a></li>
+      </ul>
+      <div id="tabs-1">
+        <h1>Flask-SocketIO Test</h1>
+  <h2>Send:</h2>
+  <form id="emit" method="POST" action='#'>
+    <input type="text" name="emit_value" id="emit_value" placeholder="Amplituda">
+    <input type="submit" value="Send">
+  </form>
+  <button id="buttonVal" type="submit" value="send">Send value</button>
+  <form id="disconnect" method="POST" action="#">
+    <input type="submit" value="Disconnect">
+  </form> 
+  <div id="plotdiv" style="width:600px;height:250px;"></div>
+  <h2>Receive:</h2>
+  <div id="log"></div>
+      </div>
+      <div id="tabs-2">
+        <h1>Flask-SocketIO Test</h1>
+        <h2>Send:</h2>
+        <form id="emit" method="POST" action='#'>
+          <input type="text" name="emit_value" id="emit_value" placeholder="Amplituda">
+          <input type="submit" value="Send">
+        </form>
+        <button id="buttonVal" type="submit" value="send">Send value</button>
+        <form id="disconnect" method="POST" action="#">
+          <input type="submit" value="Disconnect">
+        </form> 
+        <h2>Receive:</h2>
+        <div id="log2"></div>
+      </div>
+      <div id="tabs-3">
+        <h1>Flask-SocketIO Test</h1>
+        <form id="disconnect" method="POST" action="#">
+        <input type="submit" value="Disconnect">
+        </form> 
+        <canvas id="canvasID"></canvas>
+        <h2>Receive:</h2>
+        <div id="log3"></div>
+  <form id="disconnect" method="POST" action="#">
+    <input type="submit" value="Disconnect">
+  </form> 
+  <canvas id="canvasID"></canvas>
+  <h2>Receive:</h2>
+  <div id="log"></div>
+      </div>
+    </div>
+  
+ </body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE HTML>
+<html>
+ <head>
+  <title>Flask-SocketIO Test</title>
+   <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+   <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.min.js"></script>
+   <script type="text/javascript" charset="utf-8">
+     $(document).ready(function() {
+      namespace = '/test';
+      var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+      socket.on('connect', function() {
+        socket.emit('my_event', {data: 'I\'m connected!', value: 1}); });
+
+      socket.on('my_response', function(msg) {
+        console.log(msg.data);
+        $('#log').append('Received #'+msg.count+': '+msg.data+'<br>').html(); });
+
+      $('form#emit').submit(function(event) {
+          socket.emit('my_event', {value: $('#emit_value').val()});
+          return false; });
+      $('#buttonVal').click(function(event) {
+          //console.log($('#buttonVal').val());
+          socket.emit('click_event', {value: $('#buttonVal').val()});
+          return false; });
+      $('#sliderVal').change(function(event) {
+          console.log($('#sliderVal').val());
+          socket.emit('slider_event', {value: $('#sliderVal').val()});
+          return false; });
+      $('form#disconnect').submit(function(event) {
+          socket.emit('disconnect_request');
+          return false; });         
+      });
+    </script>
+ </head>
+ <body>
+  <h1>Flask-SocketIO Test</h1>
+  <h2>Send:</h2>
+  <form id="emit" method="POST" action='#'>
+    <input type="text" name="emit_value" id="emit_value" placeholder="Amplituda">
+    <input type="submit" value="Send">
+  </form>
+  <button id="buttonVal" type="submit" value="send">Send value</button>
+  <input type="range" id="sliderVal" name="vstup2" min="0" max="10" step="2" value="8">
+  <form id="disconnect" method="POST" action="#">
+    <input type="submit" value="Disconnect">
+  </form> 
+  <h2>Receive:</h2>
+  <div id="log"></div>
+ </body>
+</html>
