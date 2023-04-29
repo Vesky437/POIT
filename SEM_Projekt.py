@@ -5,12 +5,12 @@ ser=serial.Serial("/dev/ttyS0",9600)
 ser.baudrate=9600
 
 while True:
-    read_ser=ser.readline()
-    print(read_ser)
-#     for i in range(0, 10):
-#         if str(read_ser)(i)==' ':
-#             for j in range(0, i):
-#                 DistanceCM=read_ser(j)
-    values= read_ser.split(" ")
-    print(values)
+    ser.write(b"Send Data/n")
+    read_ser=ser.readline().decode('utf-8').rstrip()
+    SensorData = read_ser.split(',')
+    print(SensorData)
+    Luminosity=SensorData[1]
+    Distance=SensorData[0]
+    print(float(Luminosity))
+    print(float(Distance))
     

@@ -4,6 +4,7 @@ from flask_socketio import SocketIO, emit, disconnect
 import time
 import random
 import math
+import serial
 
 async_mode = None
 
@@ -14,19 +15,30 @@ socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 thread_lock = Lock() 
 
+ser=serial.Serial("/dev/ttyS0",9600)
+ser.baudrate=9600
 
 def background_thread(args):
     count = 0    
     dataList = []          
     while True:
+        read_ser=ser.readline()
+        Str_ser = read_ser.decode('utf-8')
+        SensorData = Str_ser.split(',')
+        #print(SensorData)
+        Luminosity=SensorData[1]
+        Distance=SensorData[0]
+        #print(float(Luminosity))
+        #print(float(Distance))
+        
         if args:
           A = dict(args).get('A')
-          btnV = dict(args).get('btn_value')
-          sliderV = dict(args).get('slider_value')
+          #btnV = dict(args).get('btn_value')
+          #sliderV = dict(args).get('slider_value')
         else:
           A = 1
-          btnV = 'null'
-          sliderV = 0 
+          #btnV = 'null'
+          #sliderV = 0 
         #print(A)
         print(args)  
         socketio.sleep(2)
@@ -43,14 +55,9 @@ def background_thread(args):
         #  print(str(dataList))
         #  print(str(dataList).replace("'", "\""))
         socketio.emit('my_response',
-                      {'dataS': float(A)*prem, 'dataC': float(A)*prem2, 'count': count},
+                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count},
                       namespace='/test') 
-        socketio.emit('my_response2',
-                      {'data': float(A)*prem, 'count': count},
-                      namespace='/test') 
-        socketio.emit('my_response3',
-                      {'data': float(A)*prem, 'count': count},
-                      namespace='/test') 
+        
 
 @app.route('/')
 def index():
