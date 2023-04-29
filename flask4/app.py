@@ -19,9 +19,12 @@ ser=serial.Serial("/dev/ttyS0",9600)
 ser.baudrate=9600
 
 def background_thread(args):
-    count = 0    
+    count = 0
+    ardEvent = 1    
     dataList = []          
     while True:
+        ser.reset_output_buffer()
+        ser.write(str(ardEvent).encode('utf-8'))
         read_ser=ser.readline()
         Str_ser = read_ser.decode('utf-8')
         SensorData = Str_ser.split(',')
@@ -33,13 +36,19 @@ def background_thread(args):
         
         if args:
           A = dict(args).get('A')
-          #btnV = dict(args).get('btn_value')
-          #sliderV = dict(args).get('slider_value')
+          btnV = dict(args).get('btn_value')
+          btnV = 'wtf'
+          
         else:
           A = 1
-          #btnV = 'null'
-          #sliderV = 0 
-        #print(A)
+          btnV = 'null'
+          
+        if btnV == 'start':
+            ardEvent = 1
+        if btnV == 'Stop':
+            ardEvent = 0
+        
+        
         print(args)  
         socketio.sleep(2)
         count += 1
@@ -54,8 +63,14 @@ def background_thread(args):
         #if len(dataList)>0:
         #  print(str(dataList))
         #  print(str(dataList).replace("'", "\""))
-        socketio.emit('my_response',
-                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count},
+        
+        if ardEvent == 1:
+            socketio.emit('my_response',
+                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count, 'btn': str(btnV)},
+                      namespace='/test') 
+        if ardEvent == 0:
+            socketio.emit('my_response',
+                      {'Distance': float(0), 'Luminosity': float(Luminosity), 'count': count},
                       namespace='/test') 
         
 
@@ -89,18 +104,15 @@ def test_connect():
             thread = socketio.start_background_task(target=background_thread, args=session._get_current_object())
 #    emit('my_response', {'data': 'Connected', 'count': 0})
 
-@socketio.on('click_event', namespace='/test')
-def db_message(message):   
-    session['btn_value'] = message['value']    
 
-@socketio.on('slider_event', namespace='/test')
-def slider_message(message):  
-    #print(message['value'])   
-    session['slider_value'] = message['value']  
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
     print('Client disconnected', request.sid)
+    
+@socketio.on('btn_event', namespace='/test')
+def db_message(message):   
+    session['btn_value'] = message['value']  
 
 if __name__ == '__main__':
     socketio.run(app, host="0.0.0.0", port=80, debug=True)

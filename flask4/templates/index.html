@@ -16,21 +16,21 @@
           renderTo: 'canvasID',
           width: 300,
           height: 300,
-          units: "Km/h",
+          units: "%",
           minValue: 0,
-          maxValue: 1000,
+          maxValue: 100,
           majorTicks: [
               "0",
-              "100",
-              "200",
-              "300",
-              "400",
-              "500",
-              "600",
-              "700",
-              "800",
-              "900",
-              "1000"
+              "10",
+              "20",
+              "30",
+              "40",
+              "50",
+              "60",
+              "70",
+              "80",
+              "90",
+              "100"
           ],
           minorTicks: 2,
           strokeTicks: true,
@@ -69,7 +69,7 @@
 
       socket.on('my_response', function(msg) {
         console.log(msg.data);
-        $('#log').append('Received #'+msg.count+': Vzdialenost: '+msg.Distance+' Osvetlenie: '+msg.Luminosity+'<br>').html(); 
+        $('#log').append('Received #'+msg.count+': Vzdialenost: '+msg.Distance+' Osvetlenie: '+msg.Luminosity+' '+msg.btn+'<br>').html(); 
         x.push(parseFloat(msg.count));
         y.push(parseFloat(msg.Distance));
         gauge.value = msg.Luminosity;
@@ -107,8 +107,16 @@
           return false; });
       $('#buttonVal').click(function(event) {
           //console.log($('#buttonVal').val());
-          socket.emit('click_event', {value: $('#buttonVal').val()});
-          return false; });
+          socket.emit('btn_event', {value: $('#buttonVal').val()});
+          if ($(this).val() == "start") {
+            $(this).val("stop");
+            $(this).text("Stop");
+          }
+          else {
+            $(this).val("start");
+            $(this).text("Start");
+          }
+          return false; }); 
       $('form#disconnect').submit(function(event) {
           socket.emit('disconnect_request');
           return false; }); 
@@ -126,7 +134,7 @@
     <input type="text" name="emit_value" id="emit_value" placeholder="Amplituda">
     <input type="submit" value="Send">
   </form>
-  <button id="buttonVal" type="submit" value="send">Send value</button>
+  <button id="buttonVal" type="submit" value="start">Start</button>
   <form id="disconnect" method="POST" action="#">
     <input type="submit" value="Disconnect">
   </form> 
