@@ -111,16 +111,22 @@
           socket.emit('disconnect_request');
           return false; }); 
       $('#StartBtn').click(function(event) {
-          socket.emit('start_btn', {value: $('#buttonVal').val()});
+          socket.emit('start_btn', {value: $('#StartBtn').val()});
           return false; });
       $('#StopBtn').click(function(event) {
-          socket.emit('stop_btn', {value: $('#buttonVal').val()});
+          socket.emit('stop_btn', {value: $('#StopBtn').val()});
           return false; });
       $('#StartDb').click(function(event) {
-          socket.emit('start_db', {value: $('#buttonVal').val()});
+          socket.emit('start_db', {value: $('#StartDb').val()});
           return false; });
       $('#StopDb').click(function(event) {
-          socket.emit('stop_db', {value: $('#buttonVal').val()});
+          socket.emit('stop_db', {value: $('#StopDb').val()});
+          return false; });
+      $('#StartFW').click(function(event) {
+          socket.emit('start_FW', {value: $('#StartFW').val()});
+          return false; });
+      $('#StopFW').click(function(event) {
+          socket.emit('stop_FW', {value: $('#StopFW').val()});
           return false; });
       
               
@@ -186,8 +192,11 @@
   <button id="StartBtn" type="submit" value="start">Start</button>
   <button id="StopBtn" type="submit" value="stop">Stop</button>
   <button id="CloseBtn" type="submit" value="close">Close</button><br>
-  <button id="StartDb" type="submit" value="startdb">Start write db</button>
-  <button id="StopDb" type="submit" value="stopdb">Stop write to db</button>
+  <button id="StartDb" type="submit" value="startdb">Start writing to db</button>
+  <button id="StopDb" type="submit" value="stopdb">Stop writing to db</button><br>
+  <button id="StartFW" type="submit" value="startFW">Start writing to file</button>
+  <button id="StopFW" type="submit" value="stopFW">Stop writing to file</button>
+
   <form id="disconnect" method="POST" action="#">
     <input type="submit" value="Disconnect">
   </form> 

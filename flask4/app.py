@@ -7,6 +7,7 @@ import configparser as ConfigParser
 import random
 import math
 import serial
+import os
 
 async_mode = None
 
@@ -36,8 +37,11 @@ def background_thread(args):
     global ardEvent
     ardEvent = 0
     global dbEvent   
-    dbEvent=0 
-    dataList = []     
+    dbEvent=0
+    global FileEvent   
+    FileEvent=1  
+    dataList = []
+    dataListFile = []     
     db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)          
     dataCounter = 0 
     while True:
@@ -54,8 +58,7 @@ def background_thread(args):
             #print(float(Luminosity))
             #print(float(Distance))
             count += 1
-            
-        
+                        
         if args:
           A = dict(args).get('A')
           btnV = dict(args).get('btn_value')
@@ -65,11 +68,11 @@ def background_thread(args):
           btnV = 'null'
         
         if dbEvent == 1:
-          dataDict = {
+          dataDictDb = {
             "t": time.time(),
             "Distance": float(Distance),
             "Luminosity": float(Luminosity)}
-          dataList.append(dataDict)
+          dataList.append(dataDictDb)
           if len(dataList)>0:
             #print(str(dataList))
             fuj = str(dataList).replace("'", "\"")
@@ -80,19 +83,27 @@ def background_thread(args):
             cursor.execute("INSERT INTO data (id, hodnoty) VALUES (%s, %s)", (maxid[0] + 1, fuj))
             db.commit()
           dataList = []
-        
           
-                
+        if FileEvent == 1:
+            dataDictFile = {
+                "t": time.time(),
+                "Distance": float(Distance),
+                "Luminosity": float(Luminosity)}
+            dataListFile.append(dataDictFile)
+            if len(dataListFile)>0:
+                fuj = str(dataListFile).replace("'", "\"")
+                fo = open("static/files/data.txt","a+")
+                fo.write("%s\r\n" %fuj)
+                fo.close
+            
+            dataListFile = []
         
         #print(args)  
         socketio.sleep(1)
 
-        
-        
-        
         if ardEvent == 1:
             socketio.emit('my_response',
-                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count, 'btn': float(ardEvent)},
+                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count, 'btn': float(FileEvent)},
                       namespace='/test') 
         # else:
             # socketio.emit('my_response',
@@ -124,6 +135,7 @@ def dbdata(num):
   cursor.execute("SELECT hodnoty FROM  data WHERE id=%s", num)
   rv = cursor.fetchone()
   return str(rv[0])
+
 
 @socketio.on('my_event', namespace='/test')
 def test_message(message):   
@@ -173,7 +185,17 @@ def Start_btn_message(message):
 @socketio.on('start_db', namespace='/test')
 def Stop_btn_message(message):
     global dbEvent   
-    dbEvent=1 
+    dbEvent=1
+    
+@socketio.on('stop_FW', namespace='/test')
+def Start_btn_message(message):
+    global FileEvent   
+    FileEvent=0 
+    
+@socketio.on('start_FW', namespace='/test')
+def Stop_btn_message(message):
+    global FileEvent   
+    FileEvent=1 
 
 if __name__ == '__main__':
     socketio.run(app, host="0.0.0.0", port=80, debug=True)
