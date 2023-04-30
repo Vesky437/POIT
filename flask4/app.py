@@ -17,41 +17,49 @@ thread_lock = Lock()
 
 ser=serial.Serial("/dev/ttyS0",9600)
 ser.baudrate=9600
-
+#global ardEvent
 def background_thread(args):
     count = 0
-    ardEvent = 1    
+    Luminosity = 0
+    Distance= 0
+    global ardEvent
+    ardEvent = 0
+    # socketio.emit('my_response',
+                      # {'Distance': float(0), 'Luminosity': float(0), 'count': float(0), 'btn': float(ardEvent)},
+                      # namespace='/test') 
     dataList = []          
     while True:
         ser.reset_output_buffer()
+        ser.reset_input_buffer()
         ser.write(str(ardEvent).encode('utf-8'))
-        read_ser=ser.readline()
-        Str_ser = read_ser.decode('utf-8')
-        SensorData = Str_ser.split(',')
-        #print(SensorData)
-        Luminosity=SensorData[1]
-        Distance=SensorData[0]
-        #print(float(Luminosity))
-        #print(float(Distance))
+        if ardEvent == 1:
+            read_ser=ser.readline()
+            Str_ser = read_ser.decode('utf-8')
+            SensorData = Str_ser.split(',')
+            #print(SensorData)
+            Luminosity=SensorData[1]
+            Distance=SensorData[0]
+            #print(float(Luminosity))
+            #print(float(Distance))
+            count += 1
         
         if args:
           A = dict(args).get('A')
           btnV = dict(args).get('btn_value')
-          btnV = 'wtf'
-          
+          #btnV = 'wtf'
         else:
           A = 1
           btnV = 'null'
           
-        if btnV == 'start':
-            ardEvent = 1
-        if btnV == 'Stop':
-            ardEvent = 0
+        # if btnV == 'start':
+            # ardEvent = 1
+        # if btnV == 'stop':
+            # ardEvent = 0
         
         
-        print(args)  
-        socketio.sleep(2)
-        count += 1
+        #print(args)  
+        socketio.sleep(1)
+        
         prem = math.sin(count)
         prem2 = math.cos(count)
         dataDict = {
@@ -66,12 +74,12 @@ def background_thread(args):
         
         if ardEvent == 1:
             socketio.emit('my_response',
-                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count, 'btn': str(btnV)},
+                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count, 'btn': float(ardEvent)},
                       namespace='/test') 
-        if ardEvent == 0:
-            socketio.emit('my_response',
-                      {'Distance': float(0), 'Luminosity': float(Luminosity), 'count': count},
-                      namespace='/test') 
+        # else:
+            # socketio.emit('my_response',
+                      # {'Distance': float(0), 'Luminosity': float(0), 'count': count, 'btn': str(btnV)},
+                      # namespace='/test') 
         
 
 @app.route('/')
@@ -109,10 +117,18 @@ def test_connect():
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
     print('Client disconnected', request.sid)
+
+
+
+@socketio.on('stop_btn', namespace='/test')
+def Start_btn_message(message):
+    global ardEvent   
+    ardEvent=0 
     
-@socketio.on('btn_event', namespace='/test')
-def db_message(message):   
-    session['btn_value'] = message['value']  
+@socketio.on('start_btn', namespace='/test')
+def Stop_btn_message(message):
+    global ardEvent   
+    ardEvent=1 
 
 if __name__ == '__main__':
     socketio.run(app, host="0.0.0.0", port=80, debug=True)

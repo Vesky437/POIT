@@ -69,7 +69,7 @@
 
       socket.on('my_response', function(msg) {
         console.log(msg.data);
-        $('#log').append('Received #'+msg.count+': Vzdialenost: '+msg.Distance+' Osvetlenie: '+msg.Luminosity+' '+msg.btn+'<br>').html(); 
+        $('#log').append('Received #'+msg.count+': Vzdialenost: '+msg.Distance+' Osvetlenie: '+msg.Luminosity+' '+msg.btn+' '+$('#buttonVal').val()+'<br>').html(); 
         x.push(parseFloat(msg.count));
         y.push(parseFloat(msg.Distance));
         gauge.value = msg.Luminosity;
@@ -105,21 +105,16 @@
       $('form#emit').submit(function(event) {
           socket.emit('my_event', {value: $('#emit_value').val()});
           return false; });
-      $('#buttonVal').click(function(event) {
-          //console.log($('#buttonVal').val());
-          socket.emit('btn_event', {value: $('#buttonVal').val()});
-          if ($(this).val() == "start") {
-            $(this).val("stop");
-            $(this).text("Stop");
-          }
-          else {
-            $(this).val("start");
-            $(this).text("Start");
-          }
-          return false; }); 
+      
       $('form#disconnect').submit(function(event) {
           socket.emit('disconnect_request');
           return false; }); 
+      $('#StartBtn').click(function(event) {
+          socket.emit('start_btn', {value: $('#buttonVal').val()});
+          return false; });
+      $('#StopBtn').click(function(event) {
+          socket.emit('stop_btn', {value: $('#buttonVal').val()});
+          return false; });
       
               
       });
@@ -134,7 +129,10 @@
     <input type="text" name="emit_value" id="emit_value" placeholder="Amplituda">
     <input type="submit" value="Send">
   </form>
-  <button id="buttonVal" type="submit" value="start">Start</button>
+  <button id="OpenBtn" type="submit" value="open">Open</button>
+  <button id="StartBtn" type="submit" value="start">Start</button>
+  <button id="StopBtn" type="submit" value="stop">Stop</button>
+  <button id="CloseBtn" type="submit" value="close">Close</button>
   <form id="disconnect" method="POST" action="#">
     <input type="submit" value="Disconnect">
   </form> 
