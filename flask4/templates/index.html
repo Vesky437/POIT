@@ -6,6 +6,7 @@
    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.min.js"></script>
    <script src="static/libs/plotly-latest.min.js"></script>
    <script src="static/libs/gauge.min.js"></script>
+   <script src="static/libs/jquery-1.11.1.min.js"></script>
    <link rel="stylesheet" href="static/jquery-ui.min.css">
     <script src="static/jquery-3.2.1.min.js"></script>
     <script src="static/jquery-ui.min.js"></script>
@@ -115,10 +116,62 @@
       $('#StopBtn').click(function(event) {
           socket.emit('stop_btn', {value: $('#buttonVal').val()});
           return false; });
+      $('#StartDb').click(function(event) {
+          socket.emit('start_db', {value: $('#buttonVal').val()});
+          return false; });
+      $('#StopDb').click(function(event) {
+          socket.emit('stop_db', {value: $('#buttonVal').val()});
+          return false; });
       
               
       });
     </script>
+<!--
+    <style type="text/css">           
+    </style>    
+    <script>
+   $(document).ready(function(){
+    var layout = {
+          title: 'Output variable',
+          xaxis: {
+            title: 'time',
+            range: [0,60]
+          },
+          yaxis: {
+            title: 'ys(t)',
+            range: [0,1]
+          }
+        };
+
+    
+    $.ajax({
+      type: "POST",
+      url: "/dbdata/4",
+      success:function(data) 
+      { console.log(data);  
+        data = JSON.parse(data);
+        console.log(data);    
+        n = Object.keys(data).length;
+        console.log(n);
+        
+        xl = [];
+        yl = [];
+        zl = []
+
+        for (var i=0; i< n; i++){
+          xl.push(data[i].x);
+          yl.push(data[i].Distance);
+          zl.push(data[i].Luminosity); }
+        let trace = [{
+            x: xl,
+            y: yl,}];   
+        Plotly.newPlot($('#plotdiv')[0], trace,layout);         
+      }
+    }).done(function( o ) {
+       // do something
+    });    
+   });   
+-->
    
  </head>
  <body>
@@ -132,7 +185,9 @@
   <button id="OpenBtn" type="submit" value="open">Open</button>
   <button id="StartBtn" type="submit" value="start">Start</button>
   <button id="StopBtn" type="submit" value="stop">Stop</button>
-  <button id="CloseBtn" type="submit" value="close">Close</button>
+  <button id="CloseBtn" type="submit" value="close">Close</button><br>
+  <button id="StartDb" type="submit" value="startdb">Start write db</button>
+  <button id="StopDb" type="submit" value="stopdb">Stop write to db</button>
   <form id="disconnect" method="POST" action="#">
     <input type="submit" value="Disconnect">
   </form> 

@@ -2,6 +2,8 @@ from threading import Lock
 from flask import Flask, render_template, session, request, jsonify, url_for
 from flask_socketio import SocketIO, emit, disconnect  
 import time
+import MySQLdb
+import configparser as ConfigParser
 import random
 import math
 import serial
@@ -9,6 +11,15 @@ import serial
 async_mode = None
 
 app = Flask(__name__)
+
+config = ConfigParser.ConfigParser()
+config.read('config.cfg')
+myhost = config.get('mysqlDB', 'host')
+myuser = config.get('mysqlDB', 'user')
+mypasswd = config.get('mysqlDB', 'passwd')
+mydb = config.get('mysqlDB', 'db')
+print(myhost)
+
 
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode=async_mode)
@@ -24,10 +35,11 @@ def background_thread(args):
     Distance= 0
     global ardEvent
     ardEvent = 0
-    # socketio.emit('my_response',
-                      # {'Distance': float(0), 'Luminosity': float(0), 'count': float(0), 'btn': float(ardEvent)},
-                      # namespace='/test') 
-    dataList = []          
+    global dbEvent   
+    dbEvent=0 
+    dataList = []     
+    db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)          
+    dataCounter = 0 
     while True:
         ser.reset_output_buffer()
         ser.reset_input_buffer()
@@ -42,6 +54,7 @@ def background_thread(args):
             #print(float(Luminosity))
             #print(float(Distance))
             count += 1
+            
         
         if args:
           A = dict(args).get('A')
@@ -50,27 +63,32 @@ def background_thread(args):
         else:
           A = 1
           btnV = 'null'
-          
-        # if btnV == 'start':
-            # ardEvent = 1
-        # if btnV == 'stop':
-            # ardEvent = 0
         
+        if dbEvent == 1:
+          dataDict = {
+            "t": time.time(),
+            "Distance": float(Distance),
+            "Luminosity": float(Luminosity)}
+          dataList.append(dataDict)
+          if len(dataList)>0:
+            #print(str(dataList))
+            fuj = str(dataList).replace("'", "\"")
+            #print(fuj)
+            cursor = db.cursor()
+            cursor.execute("SELECT MAX(id) FROM data")
+            maxid = cursor.fetchone()
+            cursor.execute("INSERT INTO data (id, hodnoty) VALUES (%s, %s)", (maxid[0] + 1, fuj))
+            db.commit()
+          dataList = []
+        
+          
+                
         
         #print(args)  
         socketio.sleep(1)
+
         
-        prem = math.sin(count)
-        prem2 = math.cos(count)
-        dataDict = {
-          "t": time.time(),
-          "x": count,
-          "y": float(A)*prem,
-        }
-        dataList.append(dataDict)
-        #if len(dataList)>0:
-        #  print(str(dataList))
-        #  print(str(dataList).replace("'", "\""))
+        
         
         if ardEvent == 1:
             socketio.emit('my_response',
@@ -80,7 +98,7 @@ def background_thread(args):
             # socketio.emit('my_response',
                       # {'Distance': float(0), 'Luminosity': float(0), 'count': count, 'btn': str(btnV)},
                       # namespace='/test') 
-        
+    db.close()        
 
 @app.route('/')
 def index():
@@ -89,7 +107,24 @@ def index():
 @app.route('/graphlive', methods=['GET', 'POST'])
 def graphlive():
     return render_template('graphlive.html', async_mode=socketio.async_mode)
-      
+    
+@app.route('/db')
+def db():
+  db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)
+  cursor = db.cursor()
+  cursor.execute('''SELECT  hodnoty FROM  data WHERE id=1''')
+  rv = cursor.fetchall()
+  return str(rv)   
+
+@app.route('/dbdata/<string:num>', methods=['GET', 'POST'])
+def dbdata(num):
+  db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)
+  cursor = db.cursor()
+  print(num)
+  cursor.execute("SELECT hodnoty FROM  data WHERE id=%s", num)
+  rv = cursor.fetchone()
+  return str(rv[0])
+
 @socketio.on('my_event', namespace='/test')
 def test_message(message):   
 #    session['receive_count'] = session.get('receive_count', 0) + 1 
@@ -129,6 +164,16 @@ def Start_btn_message(message):
 def Stop_btn_message(message):
     global ardEvent   
     ardEvent=1 
+    
+@socketio.on('stop_db', namespace='/test')
+def Start_btn_message(message):
+    global dbEvent   
+    dbEvent=0 
+    
+@socketio.on('start_db', namespace='/test')
+def Stop_btn_message(message):
+    global dbEvent   
+    dbEvent=1 
 
 if __name__ == '__main__':
     socketio.run(app, host="0.0.0.0", port=80, debug=True)
