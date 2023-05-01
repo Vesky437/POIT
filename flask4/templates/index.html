@@ -70,7 +70,7 @@
 
       socket.on('my_response', function(msg) {
         console.log(msg.data);
-        $('#log').append('Received #'+msg.count+': Vzdialenost: '+msg.Distance+' Osvetlenie: '+msg.Luminosity+' '+msg.btn+' '+$('#buttonVal').val()+'<br>').html(); 
+        $('#log').append('Received #'+msg.count+': Vzdialenost: '+msg.Distance+' Osvetlenie: '+msg.Luminosity+' Trigger: '+msg.trigger+'<br>').html(); 
         x.push(parseFloat(msg.count));
         y.push(parseFloat(msg.Distance));
         gauge.value = msg.Luminosity;
@@ -185,7 +185,7 @@
   <h1>Semestralny projekt</h1>
   <h2>Send:</h2>
   <form id="emit" method="POST" action='#'>
-    <input type="text" name="emit_value" id="emit_value" placeholder="Amplituda">
+    <input type="text" name="emit_value" id="emit_value" placeholder="Threshold">
     <input type="submit" value="Send">
   </form>
   <button id="OpenBtn" type="submit" value="open">Open</button>

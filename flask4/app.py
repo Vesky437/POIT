@@ -38,8 +38,11 @@ def background_thread(args):
     ardEvent = 0
     global dbEvent   
     dbEvent=0
-    global FileEvent   
-    FileEvent=1  
+    global FileEvent
+    FileEvent=0
+    global Threshold
+    Threshold = 5
+    trigger = 0   
     dataList = []
     dataListFile = []     
     db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)          
@@ -52,26 +55,24 @@ def background_thread(args):
             read_ser=ser.readline()
             Str_ser = read_ser.decode('utf-8')
             SensorData = Str_ser.split(',')
-            #print(SensorData)
             Luminosity=SensorData[1]
             Distance=SensorData[0]
-            #print(float(Luminosity))
-            #print(float(Distance))
             count += 1
                         
-        if args:
-          A = dict(args).get('A')
-          btnV = dict(args).get('btn_value')
-          #btnV = 'wtf'
-        else:
-          A = 1
-          btnV = 'null'
+        # if args:
+          # A = dict(args).get('A')
+          # btnV = dict(args).get('btn_value')
+          # #btnV = 'wtf'
+        # else:
+          # A = 1
+          # btnV = 'null'
         
-        if dbEvent == 1:
+        if dbEvent == 1 and ardEvent == 1:
           dataDictDb = {
             "t": time.time(),
             "Distance": float(Distance),
-            "Luminosity": float(Luminosity)}
+            "Luminosity": float(Luminosity),
+            "Trigger": trigger}
           dataList.append(dataDictDb)
           if len(dataList)>0:
             #print(str(dataList))
@@ -84,11 +85,12 @@ def background_thread(args):
             db.commit()
           dataList = []
           
-        if FileEvent == 1:
+        if FileEvent == 1 and ardEvent == 1:
             dataDictFile = {
                 "t": time.time(),
                 "Distance": float(Distance),
-                "Luminosity": float(Luminosity)}
+                "Luminosity": float(Luminosity),
+                "Trigger": trigger}
             dataListFile.append(dataDictFile)
             if len(dataListFile)>0:
                 fuj = str(dataListFile).replace("'", "\"")
@@ -97,13 +99,16 @@ def background_thread(args):
                 fo.close
             
             dataListFile = []
-        
+        if float(Distance) <= float(Threshold):
+            trigger = 1
+        else:
+            trigger = 0
         #print(args)  
         socketio.sleep(1)
 
         if ardEvent == 1:
             socketio.emit('my_response',
-                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count, 'btn': float(FileEvent)},
+                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count, 'trigger': float(trigger)},
                       namespace='/test') 
         # else:
             # socketio.emit('my_response',
@@ -139,10 +144,8 @@ def dbdata(num):
 
 @socketio.on('my_event', namespace='/test')
 def test_message(message):   
-#    session['receive_count'] = session.get('receive_count', 0) + 1 
-    session['A'] = message['value']    
-#    emit('my_response',
-#         {'data': message['value'], 'count': session['receive_count']})
+    global Threshold   
+    Threshold = message['value']    
  
 @socketio.on('disconnect_request', namespace='/test')
 def disconnect_request():

@@ -1,6 +1,7 @@
 
-[{"t": 1682890612.6058373, "Distance": 0.0, "Luminosity": 0.0}]
-[{"t": 1682890613.6078198, "Distance": 0.0, "Luminosity": 0.0}]
-[{"t": 1682890615.045858, "Distance": 3.23, "Luminosity": 71.0}]
-[{"t": 1682890617.048745, "Distance": 3.13, "Luminosity": 71.0}]
-[{"t": 1682890619.0477796, "Distance": 3.21, "Luminosity": 71.0}]
+[{"t": 1682973506.2851167, "Distance": 4.25, "Luminosity": 80.0, "Trigger": 1}]
+[{"t": 1682973508.281179, "Distance": 4.23, "Luminosity": 80.0, "Trigger": 0}]
+[{"t": 1682973510.2836251, "Distance": 4.25, "Luminosity": 80.0, "Trigger": 0}]
+[{"t": 1682973512.292947, "Distance": 4.13, "Luminosity": 80.0, "Trigger": 0}]
+[{"t": 1682973514.293408, "Distance": 4.23, "Luminosity": 80.0, "Trigger": 0}]
+[{"t": 1682973516.2961285, "Distance": 4.25, "Luminosity": 80.0, "Trigger": 0}]
