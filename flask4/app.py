@@ -44,7 +44,8 @@ def background_thread(args):
     global Threshold
     Threshold = 5
     trigger = 0
-    dataCounter=0   
+    dataCounter=0 
+    dataCounterFile=0  
     dataList = []
     dataListFile = []     
     db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)          
@@ -97,17 +98,21 @@ def background_thread(args):
         if FileEvent == 1 and ardEvent == 1:
             dataDictFile = {
                 "t": time.time(),
+                "x": dataCounterFile,
                 "Distance": float(Distance),
                 "Luminosity": float(Luminosity),
                 "Trigger": trigger}
             dataListFile.append(dataDictFile)
+            dataCounterFile += 1
+        elif FileEvent == 0:
             if len(dataListFile)>0:
                 fuj = str(dataListFile).replace("'", "\"")
                 fo = open("static/files/data.txt","a+")
                 fo.write("%s\r\n" %fuj)
                 fo.close
-            
+            dataCounterFile=0
             dataListFile = []
+            
         if float(Distance) <= float(Threshold):
             trigger = 1
         else:
@@ -132,6 +137,18 @@ def index():
 @app.route('/graphlive', methods=['GET', 'POST'])
 def graphlive():
     return render_template('graphlive.html', async_mode=socketio.async_mode)
+
+@app.route('/readAll')
+def readmyfileAll():
+    fo = open("static/files/data.txt","r")
+    rows = fo.readlines()
+    return json.dumps(rows)
+    
+@app.route('/read/<string:num>')
+def readmyfile(num):
+    fo = open("static/files/data.txt","r")
+    rows = fo.readlines()
+    return rows[int(num)-1]
     
 @app.route('/db')
 def db():

@@ -12,8 +12,21 @@
     <script src="static/jquery-ui.min.js"></script>
    
    <script type="text/javascript" charset="utf-8">
-     
-    function Write(id){
+    
+    function writeFile(id){
+      $.ajax({
+         type: "GET",
+         url: "/read/"+String(id),
+         success:function(data)
+         {
+           $("#oneFileRecord").append(data)
+         }
+    }).done(function( o ) {
+       // do something
+      });
+    }
+      
+    function writedb(id){
       $.ajax({
          type: "GET",
          url: "/dbdata/"+String(id),
@@ -26,7 +39,65 @@
       });
     }
     
-    function plotDb(id){
+    
+    function plotFile(id){
+      $.ajax({
+         type: "GET",
+         url: "/read/"+String(id),
+         success:function(data)
+         {
+           data = JSON.parse(data);
+
+           var x = new Array();
+           var dist = new Array();
+           var lum = new Array();
+           var traceDist = new Array();
+           var traceLum = new Array();
+           
+           for(item of data){
+            x.push(parseFloat(item.x));
+            dist.push(parseFloat(item.Distance));
+            lum.push(parseFloat(item.Luminosity));
+
+            }
+        traceDist = {
+            x: x,
+            y: dist,
+            name: 'Distance'
+            
+        };
+        
+        traceLum = {
+            x: x,
+            y: lum,
+            name: 'Luminosity'
+        };
+        
+        
+        layout = {
+          title: 'Sensor data',
+          xaxis: {
+              title: 'Count',
+              
+          },
+          yaxis: {
+              title: 'Data',
+              //range: [0,200]
+          }
+        };
+        
+        var traces = new Array();
+        traces.push(traceDist);
+        traces.push(traceLum);
+        
+        Plotly.newPlot($('#plotdivFile')[0], traces, layout); 
+         }
+    }).done(function( o ) {
+       // do something
+      });
+    }
+    
+        function plotDb(id){
       $.ajax({
          type: "GET",
          url: "/dbdata/"+String(id),
@@ -49,25 +120,25 @@
         traceDist = {
             x: x,
             y: dist,
-            name: 'distance'
+            name: 'Distance'
             
         };
         
         traceLum = {
             x: x,
             y: lum,
-            
+            name: 'Luminosity'
         };
         
         
         layout = {
-          title: 'Distance Data',
+          title: 'Sensor data',
           xaxis: {
               title: 'Count',
               
           },
           yaxis: {
-              title: 'Distance [cm]',
+              title: 'Data',
               //range: [0,200]
           }
         };
@@ -82,6 +153,7 @@
        // do something
       });
     }
+    
      $(document).ready(function() {
        $.ajax({
          type: "GET",
@@ -94,15 +166,42 @@
            for(item of data){
              $("#dbValues" ).append(
              '<tr>'+
-             '<td> Record number: '+item[0]+' </td>'+
+             '<td> Zaznam cislo: '+item[0]+' </td>'+
              '<td>'+
-             '<button onClick="Write('+item[0]+')"> Vypisat </button>'+ 
+             '<button onClick="writedb('+item[0]+')"> Vypisat </button>'+ 
               '<button onClick="plotDb('+item[0]+')"> Vykreslit </button>'+ 
 
              '</td>'+ 
              '</tr>'
              )
              
+           }
+         }
+       }).done(function( o ) {
+       // do something
+      });
+      
+      $.ajax({
+         type: "GET",
+         url: "/readAll",
+         success:function(data)
+         {
+           console.log(data)
+           data = JSON.parse(data);
+           console.log(data);
+           i=1
+           for(item of data){
+             $("#fileValues" ).append(
+             '<tr>'+
+             '<td> Zaznam cislo: '+i+' </td>'+
+             '<td>'+
+             '<button onClick="writeFile('+i+')"> Vypisat </button>'+ 
+              '<button onClick="plotFile('+i+')"> Vykreslit </button>'+ 
+
+             '</td>'+ 
+             '</tr>'
+             )
+             i+=1
            }
          }
        }).done(function( o ) {
@@ -114,7 +213,7 @@
           renderTo: 'canvasID',
           width: 300,
           height: 300,
-          units: "%",
+          units: "Osvetlenie [%]",
           minValue: 0,
           maxValue: 100,
           majorTicks: [
@@ -152,11 +251,57 @@
       });
       gauge.draw();
       gauge.value = "0";
+      
+      var gauge2 = new RadialGauge({
+          renderTo: 'canvasID2',
+          width: 300,
+          height: 300,
+          units: "Vydialenost [cm]",
+          minValue: 0,
+          maxValue: 200,
+          majorTicks: [
+              "0",
+              "20",
+              "40",
+              "60",
+              "80",
+              "100",
+              "120",
+              "140",
+              "160",
+              "180",
+              "200"
+          ],
+          minorTicks: 2,
+          strokeTicks: true,
+          highlights: [
+              {
+                  "from": 0,
+                  "to": 200,
+                  "color": "rgba(50, 50, 200, .75)"
+              }
+          ],
+          colorPlate: "#fff",
+          borderShadowWidth: 0,
+          borders: false,
+          needleType: "arrow",
+          needleWidth: 2,
+          needleCircleSize: 7,
+          needleCircleOuter: true,
+          needleCircleInner: false,
+          animationDuration: 1500,
+          animationRule: "linear"
+      });
+      gauge2.draw();
+      gauge2.value = "0";
     
       var x = new Array();
-      var y = new Array();
+      var dist = new Array();
+      var lum = new Array();
+      var traceDist = new Array();
+      var traceLum = new Array();
       
-      var trace;
+      
       var layout;
       
       namespace = '/test';
@@ -169,29 +314,39 @@
         console.log(msg.data);
         $('#log').append('Received #'+msg.count+': Vzdialenost: '+msg.Distance+' Osvetlenie: '+msg.Luminosity+' Trigger: '+msg.trigger+'<br>').html(); 
         x.push(parseFloat(msg.count));
-        y.push(parseFloat(msg.Distance));
+        dist.push(parseFloat(msg.Distance));
+        lum.push(parseFloat(msg.Luminosity));
         gauge.value = msg.Luminosity;
+        gauge2.value = msg.Distance;
         
-        trace = {
+        traceDist = {
             x: x,
-            y: y,
+            y: dist,
+            name: 'Distance'
             
         };
         
+        traceLum = {
+            x: x,
+            y: lum,
+            name: 'Luminosity'
+        };
+        
         layout = {
-          title: 'Distance Data',
+          title: 'Sensor data',
           xaxis: {
               title: 'Count',
           },
           yaxis: {
-              title: 'Distance [cm]',
-              //range: [0,200]
+              title: 'Data',
+              range: [0,210]
           }
         };
-        console.log(trace);
+        
         
         var traces = new Array();
-        traces.push(trace);
+        traces.push(traceDist);
+        traces.push(traceLum);
         
         Plotly.newPlot($('#plotdiv')[0], traces, layout); 
                      
@@ -226,7 +381,11 @@
           socket.emit('stop_FW', {value: $('#StopFW').val()});
           return false; });
       
-              
+      $( function() {
+        $( "#tabs" ).tabs({
+          event: "click"
+        });
+      });        
       });
     </script>
 
@@ -235,7 +394,6 @@
  <body>
    
   <h1>Semestralny projekt</h1>
-  <h2>Send:</h2>
   <form id="emit" method="POST" action='#'>
     <input type="text" name="emit_value" id="emit_value" placeholder="Threshold">
     <input type="submit" value="Send">
@@ -244,30 +402,66 @@
   <button id="StartBtn" type="submit" value="start">Start</button>
   <button id="StopBtn" type="submit" value="stop">Stop</button>
   <button id="CloseBtn" type="submit" value="close">Close</button><br>
-  <button id="StartDb" type="submit" value="startdb">Start writing to db</button>
-  <button id="StopDb" type="submit" value="stopdb">Stop writing to db</button><br>
-  <button id="StartFW" type="submit" value="startFW">Start writing to file</button>
-  <button id="StopFW" type="submit" value="stopFW">Stop writing to file</button>
-
   <form id="disconnect" method="POST" action="#">
     <input type="submit" value="Disconnect">
   </form> 
-  <h1>Senzor vzdialenosti:</h1>
-  <div id="plotdiv" style="width:600px;height:250px;"></div>
-  
-  
-  <h1>Senzor osvetlenia</h1>
-  
-  <canvas id="canvasID"></canvas>
-  <h2>Receive:</h2>
-  <div id="log"></div>
-  
+  <div id="tabs">
+      <ul>
+        <li><a href="#tabs-1">Data</a></li>
+        <li><a href="#tabs-2">Graf</a></li>
+        <li><a href="#tabs-3">Cifernik</a></li>
+        <li><a href="#tabs-4">Databaza</a></li>
+        <li><a href="#tabs-5">Subor</a></li>
+      </ul>
+  <div id="tabs-1">
+        <button id="StartDb" type="submit" value="startdb">Start writing to db</button>
+        <button id="StopDb" type="submit" value="stopdb">Stop writing to db</button><br>
+        <button id="StartFW" type="submit" value="startFW">Start writing to file</button>
+        <button id="StopFW" type="submit" value="stopFW">Stop writing to file</button>
+        <h1>Prichadzajuce data:</h1>
+        <div id="log"></div>
+        
+        </div>
+  <div id="tabs-2">
+        <button id="StartDb" type="submit" value="startdb">Start writing to db</button>
+        <button id="StopDb" type="submit" value="stopdb">Stop writing to db</button><br>
+        <button id="StartFW" type="submit" value="startFW">Start writing to file</button>
+        <button id="StopFW" type="submit" value="stopFW">Stop writing to file</button>
+        <h1>Graficke zobrazenie dat:</h1>
+        <div id="plotdiv" style="width:600px;height:250px;"></div>
+  </div>
+  <div id="tabs-3">
+        <button id="StartDb" type="submit" value="startdb">Start writing to db</button>
+        <button id="StopDb" type="submit" value="stopdb">Stop writing to db</button><br>
+        <button id="StartFW" type="submit" value="startFW">Start writing to file</button>
+        <button id="StopFW" type="submit" value="stopFW">Stop writing to file</button>
+        <h1>Data zobrazene v ciferniku:</h1>
+        <canvas id="canvasID2"></canvas>
+        <canvas id="canvasID"></canvas>
+  </div>
+  <div id="tabs-4">
+    <h1>Vykreslovanie a vypisovanie dat z db:</h1>
   <table id = "dbValues">
   <div id="oneRecord">
     </div>
     
     <div id="plotdivdb" style="width:600px;height:250px;"></div>
-  </form> 
-
+    </table>
+    </div>
+  <div id="tabs-5">
+  <h1>Vykreslovanie a vypisovanie dat zo suboru:</h1>
+  
+  <table id = "fileValues">
+    <div id="oneFileRecord"></div>
+      <div id="plotdivFile" style="width:600px;height:250px;"></div>
+    
+    </table>
+    
+    
+  </div>
+  
+  
+  
+  </div>
  </body>
 </html>
