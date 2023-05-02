@@ -8,6 +8,7 @@ import random
 import math
 import serial
 import os
+import json
 
 async_mode = None
 
@@ -42,7 +43,8 @@ def background_thread(args):
     FileEvent=0
     global Threshold
     Threshold = 5
-    trigger = 0   
+    trigger = 0
+    dataCounter=0   
     dataList = []
     dataListFile = []     
     db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)          
@@ -70,20 +72,27 @@ def background_thread(args):
         if dbEvent == 1 and ardEvent == 1:
           dataDictDb = {
             "t": time.time(),
+            "x": dataCounter,
             "Distance": float(Distance),
             "Luminosity": float(Luminosity),
             "Trigger": trigger}
+          dataCounter +=1  
           dataList.append(dataDictDb)
+        elif dbEvent == 0:
           if len(dataList)>0:
             #print(str(dataList))
             fuj = str(dataList).replace("'", "\"")
             #print(fuj)
             cursor = db.cursor()
             cursor.execute("SELECT MAX(id) FROM data")
+            
             maxid = cursor.fetchone()
+            
+            
             cursor.execute("INSERT INTO data (id, hodnoty) VALUES (%s, %s)", (maxid[0] + 1, fuj))
             db.commit()
           dataList = []
+          dataCounter=0
           
         if FileEvent == 1 and ardEvent == 1:
             dataDictFile = {
@@ -137,7 +146,7 @@ def dbdata(num):
   db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)
   cursor = db.cursor()
   print(num)
-  cursor.execute("SELECT hodnoty FROM  data WHERE id=%s", num)
+  cursor.execute("SELECT hodnoty FROM  data WHERE id=%s", [num])
   rv = cursor.fetchone()
   return str(rv[0])
 
@@ -168,7 +177,14 @@ def test_connect():
 def test_disconnect():
     print('Client disconnected', request.sid)
 
-
+@app.route('/dbdataAll', methods=['GET', 'POST'])
+def dbdataAll():
+  db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)
+  cursor = db.cursor()
+  
+  cursor.execute("SELECT * FROM  data")
+  rv = cursor.fetchall()
+  return json.dumps(rv)
 
 @socketio.on('stop_btn', namespace='/test')
 def Start_btn_message(message):
@@ -178,7 +194,8 @@ def Start_btn_message(message):
 @socketio.on('start_btn', namespace='/test')
 def Stop_btn_message(message):
     global ardEvent   
-    ardEvent=1 
+    ardEvent=1
+
     
 @socketio.on('stop_db', namespace='/test')
 def Start_btn_message(message):

@@ -12,7 +12,104 @@
     <script src="static/jquery-ui.min.js"></script>
    
    <script type="text/javascript" charset="utf-8">
+     
+    function Write(id){
+      $.ajax({
+         type: "GET",
+         url: "/dbdata/"+String(id),
+         success:function(data)
+         {
+           $("#oneRecord").append(data)
+         }
+    }).done(function( o ) {
+       // do something
+      });
+    }
+    
+    function plotDb(id){
+      $.ajax({
+         type: "GET",
+         url: "/dbdata/"+String(id),
+         success:function(data)
+         {
+           data = JSON.parse(data);
+
+           var x = new Array();
+           var dist = new Array();
+           var lum = new Array();
+           var traceDist = new Array();
+           var traceLum = new Array();
+           
+           for(item of data){
+            x.push(parseFloat(item.x));
+            dist.push(parseFloat(item.Distance));
+            lum.push(parseFloat(item.Luminosity));
+
+            }
+        traceDist = {
+            x: x,
+            y: dist,
+            name: 'distance'
+            
+        };
+        
+        traceLum = {
+            x: x,
+            y: lum,
+            
+        };
+        
+        
+        layout = {
+          title: 'Distance Data',
+          xaxis: {
+              title: 'Count',
+              
+          },
+          yaxis: {
+              title: 'Distance [cm]',
+              //range: [0,200]
+          }
+        };
+        
+        var traces = new Array();
+        traces.push(traceDist);
+        traces.push(traceLum);
+        
+        Plotly.newPlot($('#plotdivdb')[0], traces, layout); 
+         }
+    }).done(function( o ) {
+       // do something
+      });
+    }
      $(document).ready(function() {
+       $.ajax({
+         type: "GET",
+         url: "/dbdataAll",
+         success:function(data)
+         {
+           console.log(data)
+           data = JSON.parse(data);
+           console.log(data);
+           for(item of data){
+             $("#dbValues" ).append(
+             '<tr>'+
+             '<td> Record number: '+item[0]+' </td>'+
+             '<td>'+
+             '<button onClick="Write('+item[0]+')"> Vypisat </button>'+ 
+              '<button onClick="plotDb('+item[0]+')"> Vykreslit </button>'+ 
+
+             '</td>'+ 
+             '</tr>'
+             )
+             
+           }
+         }
+       }).done(function( o ) {
+       // do something
+      });  
+       
+       
       var gauge = new RadialGauge({
           renderTo: 'canvasID',
           width: 300,
@@ -37,8 +134,8 @@
           strokeTicks: true,
           highlights: [
               {
-                  "from": 0.5,
-                  "to": 1,
+                  "from": 0,
+                  "to": 100,
                   "color": "rgba(200, 50, 50, .75)"
               }
           ],
@@ -132,52 +229,7 @@
               
       });
     </script>
-<!--
-    <style type="text/css">           
-    </style>    
-    <script>
-   $(document).ready(function(){
-    var layout = {
-          title: 'Output variable',
-          xaxis: {
-            title: 'time',
-            range: [0,60]
-          },
-          yaxis: {
-            title: 'ys(t)',
-            range: [0,1]
-          }
-        };
 
-    
-    $.ajax({
-      type: "POST",
-      url: "/dbdata/4",
-      success:function(data) 
-      { console.log(data);  
-        data = JSON.parse(data);
-        console.log(data);    
-        n = Object.keys(data).length;
-        console.log(n);
-        
-        xl = [];
-        yl = [];
-        zl = []
-
-        for (var i=0; i< n; i++){
-          xl.push(data[i].x);
-          yl.push(data[i].Distance);
-          zl.push(data[i].Luminosity); }
-        let trace = [{
-            x: xl,
-            y: yl,}];   
-        Plotly.newPlot($('#plotdiv')[0], trace,layout);         
-      }
-    }).done(function( o ) {
-       // do something
-    });    
-   });   
--->
    
  </head>
  <body>
@@ -209,6 +261,12 @@
   <canvas id="canvasID"></canvas>
   <h2>Receive:</h2>
   <div id="log"></div>
+  
+  <table id = "dbValues">
+  <div id="oneRecord">
+    </div>
+    
+    <div id="plotdivdb" style="width:600px;height:250px;"></div>
   </form> 
 
  </body>
