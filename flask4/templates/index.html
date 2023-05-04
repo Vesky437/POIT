@@ -312,7 +312,7 @@
 
       socket.on('my_response', function(msg) {
         console.log(msg.data);
-        $('#log').append('Received #'+msg.count+': Vzdialenost: '+msg.Distance+' Osvetlenie: '+msg.Luminosity+' Trigger: '+msg.trigger+'<br>').html(); 
+        $('#log').append('Received #'+msg.count+': Vzdialenost: '+msg.Distance+' Osvetlenie: '+msg.Luminosity+' Trigger: '+msg.trigger+' '+msg.status+'<br>').html(); 
         x.push(parseFloat(msg.count));
         dist.push(parseFloat(msg.Distance));
         lum.push(parseFloat(msg.Luminosity));

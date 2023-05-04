@@ -47,7 +47,8 @@ def background_thread(args):
     dataCounter=0 
     dataCounterFile=0  
     dataList = []
-    dataListFile = []     
+    dataListFile = []
+    writingStatus = ' '     
     db = MySQLdb.connect(host=myhost,user=myuser,passwd=mypasswd,db=mydb)          
     dataCounter = 0 
     while True:
@@ -61,6 +62,7 @@ def background_thread(args):
             Luminosity=SensorData[1]
             Distance=SensorData[0]
             count += 1
+            
                         
         # if args:
           # A = dict(args).get('A')
@@ -79,6 +81,7 @@ def background_thread(args):
             "Trigger": trigger}
           dataCounter +=1  
           dataList.append(dataDictDb)
+          writingStatus = "Zapujem do db "
         elif dbEvent == 0:
           if len(dataList)>0:
             #print(str(dataList))
@@ -92,6 +95,7 @@ def background_thread(args):
             
             cursor.execute("INSERT INTO data (id, hodnoty) VALUES (%s, %s)", (maxid[0] + 1, fuj))
             db.commit()
+            writingStatus = "Zapis ukonceny "
           dataList = []
           dataCounter=0
           
@@ -104,15 +108,22 @@ def background_thread(args):
                 "Trigger": trigger}
             dataListFile.append(dataDictFile)
             dataCounterFile += 1
+            
+            writingStatus = "Zapujem do suboru "
         elif FileEvent == 0:
             if len(dataListFile)>0:
                 fuj = str(dataListFile).replace("'", "\"")
                 fo = open("static/files/data.txt","a+")
                 fo.write("%s\r\n" %fuj)
                 fo.close
+                writingStatus = "Zapis ukonceny "
             dataCounterFile=0
             dataListFile = []
             
+        
+        if FileEvent == 1 and dbEvent == 1:
+            writingStatus = "Zapujem do suboru aj do db "
+        
         if float(Distance) <= float(Threshold):
             trigger = 1
         else:
@@ -122,12 +133,13 @@ def background_thread(args):
 
         if ardEvent == 1:
             socketio.emit('my_response',
-                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count, 'trigger': float(trigger)},
+                      {'Distance': float(Distance), 'Luminosity': float(Luminosity), 'count': count, 'trigger': float(trigger), 'status': str(writingStatus)},
                       namespace='/test') 
         # else:
             # socketio.emit('my_response',
                       # {'Distance': float(0), 'Luminosity': float(0), 'count': count, 'btn': str(btnV)},
                       # namespace='/test') 
+        writingStatus = " "
     db.close()        
 
 @app.route('/')
